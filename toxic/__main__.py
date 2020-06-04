@@ -1,25 +1,27 @@
-import sys
-from bottle import run, route, request, static_file
-from toxic import ToxicClassifier, preapre_environment
-
-classifier = ToxicClassifier()
-port = int(sys.argv[1]) or 6754
+from toxic.models import BertToxicClassifier as ToxicClassifier
+from toxic.utils import preapre_environment
+from bottle import Bottle, route, request, static_file
 
 
-@route('/', method='GET')
-def static():
-    return static_file('api.html', root='web/')
-
-
-@route('/predict', method='POST')
-def predict():
-    return classifier.predict(request.json.get('sequences', []))
-
-
-def serve():
+def serve(port):
     preapre_environment()
-    run(host='0.0.0.0', port=port, reloader=True)
+    classifier = ToxicClassifier(load_weights=True)
+
+    app = Bottle()
+
+    @app.route('/', method='GET')
+    def static():
+        return static_file('api.html', root='web/')
+
+    @app.route('/predict', method='POST')
+    def predict():
+        return {
+            'results': classifier.predict(request.json.get('sequences', []))
+        }
+
+    preapre_environment()
+    app.run(host='0.0.0.0', port=port, reloader=True)
 
 
 if __name__ == '__main__':
-    serve()
+    serve(port=6666)

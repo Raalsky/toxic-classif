@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name='toxic',
     version='0.0.1',
-    py_modules=['toxic'],
+    packages=['toxic'],
     entry_points={
-        'console_scripts': ['toxic=toxic:__main__'],
+        'console_scripts': ['toxic=toxic:main'],
     },
     install_requires=[
         'pip>=20.1.1',

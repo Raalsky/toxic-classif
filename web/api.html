@@ -248,24 +248,51 @@
     Prediction
   </div>
 </div>
-<div class="url">http://c482003a7843.ngrok.io/predict</div>
+<div class="url">/predict</div>
 <div class="description request-description"></div>
 
 
-
-
       <div class="request-body">
-    <div class="body-heading">BODY <span class="body-type">raw</span></div>
-      <hr>
-<div class="raw-body code-snippet">
-    <pre class="body-block click-to-expand-wrapper is-snippet-wrapper language-javascript" data-id="f62cf495-7152-4b9c-94d2-46fdc2275861" data-title="BODY Raw"><code class="body-block is-highlighted language-javascript"><span class="token punctuation">{</span>
-	<span class="token string">"sequences"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
-		<span class="token string">"You're stupid"</span><span class="token punctuation">,</span>
+          <div class="body-heading">BODY <span class="body-type">application/json</span>
+          </div>
+          <hr>
+          <div class="raw-body code-snippet">
+    <pre class="body-block click-to-expand-wrapper is-snippet-wrapper language-javascript"
+         data-id="f62cf495-7152-4b9c-94d2-46fdc2275861"
+         data-title="BODY Raw"><code
+            class="body-block is-highlighted language-javascript"><span
+            class="token punctuation">{</span>
+	<span class="token string">"sequences"</span><span
+                class="token punctuation">:</span> <span
+                class="token punctuation">[</span>
+		<span class="token string">"You're stupid"</span><span
+                class="token punctuation">,</span>
 		<span class="token string">"Good morning"</span>
 	<span class="token punctuation">]</span>
 <span class="token punctuation">}</span></code></pre>
-</div>
-  </div>
+          </div>
+      </div>
+
+      <div class="request-body">
+          <div class="body-heading">RESPONSE <span class="body-type">application/json</span>
+          </div>
+          <hr>
+          <div class="raw-body code-snippet">
+    <pre class="body-block click-to-expand-wrapper is-snippet-wrapper language-javascript"
+         data-id="f62cf495-7152-4b9c-94d2-46fdc2275861"
+         data-title="BODY Raw"><code
+            class="body-block is-highlighted language-javascript"><span
+            class="token punctuation">{</span>
+	<span class="token string">"results"</span><span
+                class="token punctuation">:</span> <span
+                class="token punctuation">[</span>
+		<span class="token string">"You're stupid"</span><span
+                class="token punctuation">,</span>
+		<span class="token string">"Good morning"</span>
+	<span class="token punctuation">]</span>
+<span class="token punctuation">}</span></code></pre>
+          </div>
+      </div>
 
       </div>
   <br><br>
@@ -289,7 +316,7 @@
   <div class="example-request__snippet">
     <div class="request code-snippet">
       <div class="formatted-requests is-default" data-lang="curl" data-id="f62cf495-7152-4b9c-94d2-46fdc2275861_0">
-        <pre class="click-to-expand-wrapper is-snippet-wrapper language-javascript" data-title="Example Request" data-content-type="example-request" data-id="f62cf495-7152-4b9c-94d2-46fdc2275861_0" data-clipboard-target="#curl_0_f62cf495-7152-4b9c-94d2-46fdc2275861" data-before-copy="Copy to Clipboard" data-after-copy="Copied"><code class=" is-highlighted language-javascript" id="curl_0_f62cf495-7152-4b9c-94d2-46fdc2275861">curl <span class="token operator">--</span>location <span class="token operator">--</span>request POST <span class="token string">'http://c482003a7843.ngrok.io/predict'</span> \
+        <pre class="click-to-expand-wrapper is-snippet-wrapper language-javascript" data-title="Example Request" data-content-type="example-request" data-id="f62cf495-7152-4b9c-94d2-46fdc2275861_0" data-clipboard-target="#curl_0_f62cf495-7152-4b9c-94d2-46fdc2275861" data-before-copy="Copy to Clipboard" data-after-copy="Copied"><code class=" is-highlighted language-javascript" id="curl_0_f62cf495-7152-4b9c-94d2-46fdc2275861">curl <span class="token operator">--</span>location <span class="token operator">--</span>request POST <span class="token string">'http://[id].ngrok.io/predict'</span> \
 <span class="token operator">--</span>data<span class="token operator">-</span>raw '<span class="token punctuation">{</span>
 	<span class="token string">"sequences"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
 		<span class="token string">"You'\''re stupid"</span><span class="token punctuation">,</span>
