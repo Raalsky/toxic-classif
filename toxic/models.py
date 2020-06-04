@@ -1,6 +1,7 @@
 import tensorflow as tf
 import transformers
 import numpy as np
+import itertools
 
 from .utils import hash_name, MODELS_DIR, PARAMS_DIR
 
@@ -19,7 +20,8 @@ class ToxicClassifierBase:
                  attention_dropout=0.2,
                  threshold=0.5,
                  do_lower_case=True,
-                 trainable_embedding=False
+                 trainable_embedding=False,
+                 tta_fold=0
                  ):
         self.model_name = model_name
         self.model_name_hash = hash_name(model_name)
@@ -35,6 +37,7 @@ class ToxicClassifierBase:
         self.attention_dropout = attention_dropout
         self.threshold = threshold
         self.trainable_embedding = trainable_embedding
+        self.tta_fold = tta_fold
 
         self.learning_rate = 2e-6
         self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
@@ -147,8 +150,26 @@ class ToxicClassifierBase:
             'toxic': score > self.threshold
         }
 
+    def augment(self, sequence):
+        return [sequence] + [sequence] * self.tta_fold
+
+    def test_time_augment(self, sequences):
+        return list(itertools.chain(*list(map(self.augment, sequences))))
+
+    def score_after_tta(self, predictions):
+        # Numpy magic aka averaging every "tta_fold" subarrays
+        ids = np.arange(len(predictions)) // self.tta_fold
+        return np.bincount(ids, predictions) / np.bincount(ids)
+
     def raw_predict(self, sequences):
-        return self.model.predict(self.get_tokens(sequences))
+
+        return self.score_after_tta(
+                    self.model.predict(
+                        self.get_tokens(
+                            self.test_time_augment(sequences)
+                        )
+                    )
+                )
 
     def predict(self, sequences):
         return [
