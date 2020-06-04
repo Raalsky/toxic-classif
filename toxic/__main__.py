@@ -1,6 +1,6 @@
 import sys
 from bottle import run, route, request, static_file
-from toxic import ToxicClassifier
+from toxic import ToxicClassifier, preapre_environment
 
 classifier = ToxicClassifier()
 port = int(sys.argv[1]) or 6754
@@ -16,9 +16,10 @@ def predict():
     return classifier.predict(request.json.get('sequences', []))
 
 
-def main():
+def serve():
+    preapre_environment()
     run(host='0.0.0.0', port=port, reloader=True)
 
 
 if __name__ == '__main__':
-    main()
+    serve()
