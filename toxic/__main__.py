@@ -3,6 +3,7 @@ from bottle import run, route, request, static_file
 from toxic import ToxicClassifier
 
 classifier = ToxicClassifier()
+port = int(sys.argv[1]) or 6754
 
 
 @route('/', method='GET')
@@ -15,4 +16,9 @@ def predict():
     return classifier.predict(request.json.get('sequences', []))
 
 
-run(host='0.0.0.0', port=int(sys.argv[1]), reloader=True)
+def main():
+    run(host='0.0.0.0', port=port, reloader=True)
+
+
+if __name__ == '__main__':
+    main()
