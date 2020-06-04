@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from .utils import hash_name
+from .utils import hash_name, MODELS_DIR, PARAMS_DIR
 
 
 class ToxicClassifier:
@@ -40,19 +40,20 @@ class ToxicClassifier:
         self.loss = "binary_crossentropy"
         self.metrics = ["accuracy"]
 
-        if load_params:
-            self.load_params_from_file()
-
+        self.load_params_from_file_if_specified(load_params)
         self.initialize_model()
+        self.load_weights_from_file_if_specified(load_weights)
 
+    def load_params_from_file_if_specified(self, load_params):
+        if load_params:
+            pass
+        pass
+
+    def load_weights_from_file_if_specified(self, load_weights):
         if load_weights:
-            self.load_weights_from_file()
-
-    def load_params_from_file(self):
-        pass
-
-    def load_weights_from_file(self):
-        pass
+            self.model.load_weights(str(
+                MODELS_DIR / self.model_name_hash / 'weights.h5'
+            ))
 
     def initialize_model(self):
         self.model = self.architecture()
@@ -117,8 +118,8 @@ class ToxicClassifier:
     def classifier_architecture(self, input_layer):
         raise NotImplementedError
 
-    def tokenize(self, sequences):
-        return self.tokenizer.tokenize(sequences)
+    def tokenize(self, text):
+        return self.tokenizer.tokenize(text)
 
     def get_tokens(self, sequences):
         input_ids, input_masks, input_segments = [], [], []
@@ -134,21 +135,22 @@ class ToxicClassifier:
             input_masks.append(inputs['attention_mask'])
             input_segments.append(inputs['token_type_ids'])
 
-        return np.asarray(input_ids, dtype=tf.int32), \
-               np.asarray(input_masks, dtype=tf.int32), \
-               np.asarray(input_segments, dtype=tf.int32)
+        return np.asarray(input_ids, dtype='int32'), \
+               np.asarray(input_masks, dtype='int32'), \
+               np.asarray(input_segments, dtype='int32')
 
-    def threshold_prediction(self, prediction):
-        return prediction > self.threshold
+    def _judge_prediction(self, prediction, precision: int = 3):
+        score = np.asscalar(prediction[0])
+        return {
+            'score': round(score, precision),
+            'toxic': score > self.threshold
+        }
 
     def raw_predict(self, sequences):
         return self.model.predict(self.get_tokens(sequences))
 
-    def predict(self, sequences, precision: int = 1):
+    def predict(self, sequences):
         return [
-            {
-                'score': raw_score.round(precision),
-                'toxic': self.threshold_prediction(raw_score)
-            }
-            for raw_score in self.raw_predict(sequences)
+            self._judge_prediction(prediction)
+            for prediction in self.raw_predict(sequences)
         ]
