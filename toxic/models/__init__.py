@@ -1,4 +1,6 @@
-import hashlib
+from pathlib import Path
+
+from .utils import hash_name
 
 
 # Class selector based on name
