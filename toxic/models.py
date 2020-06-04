@@ -144,7 +144,7 @@ class ToxicClassifierBase:
                np.asarray(input_segments, dtype='int32')
 
     def _judge_prediction(self, prediction, precision: int = 3):
-        score = np.asscalar(prediction[0])
+        score = np.asscalar(prediction)
         return {
             'score': round(score, precision),
             'toxic': score > self.threshold
@@ -158,7 +158,9 @@ class ToxicClassifierBase:
 
     def score_after_tta(self, predictions):
         # Numpy magic aka averaging every "tta_fold" subarrays
-        ids = np.arange(len(predictions)) // self.tta_fold
+        predictions = predictions[:, 0]
+        print(predictions)
+        ids = np.arange(len(predictions)) // (1 + self.tta_fold)
         return np.bincount(ids, predictions) / np.bincount(ids)
 
     def raw_predict(self, sequences):
@@ -179,14 +181,18 @@ class ToxicClassifierBase:
 
 
 class BertToxicClassifier(ToxicClassifierBase):
-    def __init__(self, load_weights: bool = False):
+    def __init__(self,
+                 load_weights: bool = False,
+                 tta_fold: int = 0
+                 ):
         super(BertToxicClassifier, self).__init__(
             model_name='TOX-1',
             tokenizer_cls=transformers.BertTokenizer,
             config_cls=transformers.BertConfig,
             embedding_model_cls=transformers.TFBertModel,
             pretrained_weights_name='bert-base-uncased',
-            load_weights=load_weights
+            load_weights=load_weights,
+            tta_fold=tta_fold
         )
 
     def classifier_architecture(self, input_layer):

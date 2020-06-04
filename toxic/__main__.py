@@ -1,6 +1,6 @@
 from toxic.models import BertToxicClassifier as ToxicClassifier
 from toxic.utils import preapre_environment
-from bottle import Bottle, route, request, static_file
+from bottle import Bottle, request, static_file
 
 
 def serve(port):
