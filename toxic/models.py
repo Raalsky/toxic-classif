@@ -3,6 +3,9 @@ import transformers
 import numpy as np
 import itertools
 
+from wildnlp.aspects import SentimentMasking, RemoveChar, QWERTY, Digits2Words #Misspellings
+from wildnlp.aspects.utils import compose
+
 from .utils import hash_name, MODELS_DIR, PARAMS_DIR
 
 
@@ -150,8 +153,11 @@ class ToxicClassifierBase:
             'toxic': score > self.threshold
         }
 
+    def augment_one(self, sequence):
+        return sequence
+
     def augment(self, sequence):
-        return [sequence] + [sequence] * self.tta_fold
+        return [sequence] + [self.augment_one(sequence)] * self.tta_fold
 
     def test_time_augment(self, sequences):
         return list(itertools.chain(*list(map(self.augment, sequences))))
@@ -194,6 +200,10 @@ class BertToxicClassifier(ToxicClassifierBase):
             load_weights=load_weights,
             tta_fold=tta_fold
         )
+        self.tta_composition = compose(SentimentMasking(), RemoveChar(), QWERTY())
+
+    def augment_one(self, sequence):
+        return self.tta_composition(sequence)
 
     def classifier_architecture(self, input_layer):
         x = tf.keras.layers.Dense(256, activation="relu")(input_layer)

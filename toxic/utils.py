@@ -1,4 +1,6 @@
+import sys
 import hashlib
+import random
 import tensorflow as tf
 from pathlib import Path
 
@@ -10,7 +12,9 @@ def hash_name(name):
 MODELS_DIR = Path('models')
 PARAMS_DIR = Path('params')
 
+
 def preapre_environment():
+    random.seed(2501)
     try:
         physical_devices = tf.config.list_physical_devices('GPU')
         tf.config.experimental.set_memory_growth(physical_devices[0], True)
