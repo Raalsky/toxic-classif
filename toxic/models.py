@@ -272,8 +272,8 @@ class ToxicClassifierBase:
             batch_size=16
         )
 
-    def evaluate(self, test):
-        pass
+    def evaluate(self, x_test, y_test):
+        return self.model.evaluate(x_test, y_test)
 
 
 class BertToxicClassifier(ToxicClassifierBase):

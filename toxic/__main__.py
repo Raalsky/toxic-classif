@@ -44,6 +44,9 @@ def train():
 
     cls = BertToxicClassifier()
 
-    (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = cls.load_datasets(refresh=True)
+    (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = cls.load_datasets(refresh=False)
 
     cls.train(x_train, y_train, x_validation, y_validation)
+    loss, acc = cls.evaluate(x_test, y_test)
+
+    print(100.0 * acc)
