@@ -32,9 +32,11 @@ class ToxicClassifierBase:
                  dropout=0.2,
                  attention_dropout=0.2,
                  threshold=0.5,
+                 learning_rate=2e-6,
                  do_lower_case=True,
                  trainable_embedding=False,
-                 tta_fold=0
+                 tta_fold=0,
+                 tags=[]
                  ):
         self.model_name = model_name
         self.model_name_hash = hash_name(model_name)
@@ -52,8 +54,9 @@ class ToxicClassifierBase:
         self.threshold = threshold
         self.trainable_embedding = trainable_embedding
         self.tta_fold = tta_fold
+        self.tags = tags
 
-        self.learning_rate = 2e-6
+        self.learning_rate = learning_rate
         self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
         self.loss = "binary_crossentropy"
         self.metrics = ["accuracy"]
@@ -280,7 +283,13 @@ class BertToxicClassifier(ToxicClassifierBase):
     def __init__(self,
                  load_weights: bool = False,
                  tta_fold: int = 0,
-                 initialize_model: bool = True
+                 initialize_model: bool = True,
+                 max_seq_length=32,
+                 dropout=0.2,
+                 attention_dropout=0.2,
+                 threshold=0.5,
+                 learning_rate=2e-6,
+                 trainable_embedding=False
                  ):
         super(BertToxicClassifier, self).__init__(
             model_name='TOX-1',
@@ -290,8 +299,16 @@ class BertToxicClassifier(ToxicClassifierBase):
             pretrained_weights_name='bert-base-uncased',
             load_weights=load_weights,
             initialize_model=initialize_model,
-            tta_fold=tta_fold
+            tta_fold=tta_fold,
+            max_seq_length=max_seq_length,
+            dropout=dropout,
+            attention_dropout=attention_dropout,
+            threshold=threshold,
+            trainable_embedding=trainable_embedding,
+            learning_rate=learning_rate,
+            tags=['bert']
         )
+        self.optimizer = tf.keras.optimizers.Nadam(learning_rate=self.learning_rate)
         try:
             self.tta_composition = naf.Sequential([
                 naw.SynonymAug(aug_src='wordnet'),
@@ -302,8 +319,8 @@ class BertToxicClassifier(ToxicClassifierBase):
             nltk.download('wordnet')
             nltk.download('averaged_perceptron_tagger')
 
-    # def augment_one(self, sequence):
-    #     return self.tta_composition.augment(sequence)
+    def augment_one(self, sequence):
+        return self.tta_composition.augment(sequence)
 
     def classifier_architecture(self, input_layer):
         x = tf.keras.layers.Dense(256, activation="relu")(input_layer)

@@ -43,13 +43,25 @@ def client():
 
 
 def train(trial):
-    x = trial.suggest_uniform('x', -10, 10)
+    max_seq_length = trial.suggest_categorical('max_seq_length', [32, 64, 128, 256, 512])
+    dropout = trial.suggest_uniform('dropout', 0.0, 0.5)
+    attention_dropout = trial.suggest_uniform('attention_dropout', 0.0, 0.5)
+    trainable_embedding = trial.suggest_categorical('trainable_embedding', [False, True])
+    learning_rate = trial.suggest_loguniform('learning_rate', 1e-7, 1e-4)
 
-    cls = BertToxicClassifier()
+    cls = BertToxicClassifier(
+        max_seq_length=max_seq_length,
+        dropout=dropout,
+        attention_dropout=attention_dropout,
+        trainable_embedding=trainable_embedding,
+        learning_rate=learning_rate
+    )
     (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = cls.load_datasets(refresh=False)
 
     neptune.create_experiment(name=cls.model_name_hash, params=trial.params)
-    neptune.append_tag('bert')
+
+    for tag in cls.tags:
+        neptune.append_tag(tag)
 
     cls.train(x_train, y_train, x_validation, y_validation)
     test_loss, test_acc = cls.evaluate(x_test, y_test)
