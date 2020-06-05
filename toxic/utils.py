@@ -33,7 +33,6 @@ def compress_directory(path):
 
     if os.path.exists(tmp_file):
         os.remove(tmp_file)
-    os.remove(tmp_file)
 
     tar = tarfile.open(tmp_file, "w:gz")
     tar.add(path, arcname="model")

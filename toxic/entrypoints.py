@@ -56,9 +56,10 @@ def train(trial):
         dropout=dropout,
         attention_dropout=attention_dropout,
         trainable_embedding=trainable_embedding,
-        learning_rate=learning_rate
+        learning_rate=learning_rate,
+        tta_fold=8
     )
-    (x_train, y_train), (x_validation, y_validation) = cls.load_datasets(refresh=False)
+    (x_train, y_train), (x_validation, y_validation) = cls.load_datasets()
 
     neptune.create_experiment(name=cls.model_name_hash, params=trial.params)
 
@@ -76,12 +77,16 @@ def train(trial):
     x_test, y_test = cls.load_dataset_dataframe('test')
     test_acc = cls.evaluate_with_tta(x_test, y_test)
 
+    print(test_acc)
+
     neptune.send_metric('test_acc', 100.0 * test_acc)
 
     model_path = cls.save()
-    neptune.send_artifact(compress_directory(model_path), 'model.tar.gz')
+    neptune.send_text('path', model_path)
 
-    return test_acc
+    # neptune.send_artifact(compress_directory(model_path), 'model.tar.gz')
+
+    return 1-test_acc
 
 
 def optimization():

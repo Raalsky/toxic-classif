@@ -257,15 +257,15 @@ class ToxicClassifierBase:
     def load_dataset_dataframe(self, name):
         ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz",
                          compression='gzip')
-        return ds['text'].values, ds['class'].values
+        return ds['text'].values[:512], ds['class'].values[:512]
 
     def load_dataset(self, name, refresh=True):
         if not refresh:
-            tokens = self.prepare_tokens(name, refresh=False)
+            tokens = self.prepare_tokens(name=name, refresh=False)
             y = np.load(DATASET_DIR / f"{name}_y.npy")
         else:
             x, y = self.load_dataset_dataframe(name)
-            tokens = self.prepare_tokens(name, x)
+            tokens = self.prepare_tokens(name=name, x=x)
             np.save(DATASET_DIR / f"{name}_y.npy", y)
 
         return tokens, y
@@ -286,7 +286,9 @@ class ToxicClassifierBase:
         return self.model.evaluate(x_test, y_test)
 
     def evaluate_with_tta(self, sequences, y):
-        predictions = self.predict(sequences)
+        predictions = [
+            pred['score'] for pred in self.predict(sequences)
+        ]
         acc = tf.keras.metrics.Accuracy()
         acc.update_state(
             predictions, y

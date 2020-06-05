@@ -8,7 +8,6 @@ setup(
         'console_scripts': [
             'toxic-server=toxic.entrypoints:server',
             'toxic-client=toxic.entrypoints:client',
-            'toxic-train=toxic.entrypoints:train',
             'toxic-optim=toxic.entrypoints:optimization'
         ],
     },
