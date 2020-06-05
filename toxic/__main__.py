@@ -1,30 +1,24 @@
 import os
 import sys
-import json
-import requests
+
+from toxic.models import BertToxicClassifier as ToxicClassifier
+
+dummy_classifier = ToxicClassifier(initialize_model=False)
 
 
-def server(port=6666, model_name='deploy'):
-    os.system(f"docker run -it --rm -p {port}:8501 -v \"$PWD/models/{model_name}:/models/{model_name}\" -e MODEL_NAME={model_name} tensorflow/serving")
+def server():
+    port = int(sys.argv[1])
+    model_name = sys.argv[2]
+    os.system(f"docker run -it --rm -p {port}:8501 -v \"$PWD/models/{model_name}:/models/deploy\" -e MODEL_NAME=deploy tensorflow/serving")
 
 
-def fetch_scores_and_print(host, sequences):
-    payload = {
-        'sequences': sequences
-    }
-
-    response = requests.post(host, json=payload, timeout=30)
-
-    assert response.status_code == 200
-
-    results = json.loads(response.content)['results']
-
-    for score in results:
-        print(int(score['toxic']))
+def print_results(predictions):
+    for pred in predictions:
+        print(int(pred['toxic']))
 
 
 def client():
-    host = sys.argv[1]
+    host = sys.argv[1] + '/v1/models/deploy'
     batch_size = int(sys.argv[2])
 
     batch = []
@@ -34,7 +28,11 @@ def client():
         batch.append(data)
 
         if len(batch) >= batch_size:
-            fetch_scores_and_print(f"{host}/predict", batch)
+            print_results(
+                dummy_classifier.predict_from_api(host, batch)
+            )
             batch = []
 
-    fetch_scores_and_print(f"{host}/predict", batch)
+    print_results(
+        dummy_classifier.predict_from_api(host, batch)
+    )

@@ -2,8 +2,10 @@ import tensorflow as tf
 import transformers
 import numpy as np
 import itertools
+import requests
 import nltk
 import time
+import json
 import os
 
 
@@ -192,17 +194,48 @@ class ToxicClassifierBase:
                     )
                 )
 
-    def predict(self, sequences):
+    def judge_predictions(self, predictions):
         return [
             self._judge_prediction(prediction)
-            for prediction in self.raw_predict(sequences)
+            for prediction in predictions
         ]
+
+    def predict(self, sequences):
+        return self.judge_predictions(
+            self.raw_predict(sequences)
+        )
+
+    def predict_from_api(self, host, sequences):
+        ids, masks, segments = self.get_tokens(
+            self.test_time_augment(sequences)
+        )
+
+        input_data_json = json.dumps({
+            "signature_name": "serving_default",
+            "instances": [
+                {
+                    "input_ids": ids[u].tolist(),
+                    "input_mask": masks[u].tolist(),
+                    "segment_ids": segments[u].tolist()
+                }
+                for u in range(len(ids))
+            ]
+        })
+
+        response = requests.post(host + ':predict', data=input_data_json)
+        response.raise_for_status()
+        predictions = np.array(response.json()['predictions'])
+
+        return self.judge_predictions(
+            self.score_after_tta(predictions)
+        )
 
 
 class BertToxicClassifier(ToxicClassifierBase):
     def __init__(self,
                  load_weights: bool = False,
-                 tta_fold: int = 0
+                 tta_fold: int = 0,
+                 initialize_model: bool = True
                  ):
         super(BertToxicClassifier, self).__init__(
             model_name='TOX-1',
@@ -211,6 +244,7 @@ class BertToxicClassifier(ToxicClassifierBase):
             embedding_model_cls=transformers.TFBertModel,
             pretrained_weights_name='bert-base-uncased',
             load_weights=load_weights,
+            initialize_model=initialize_model,
             tta_fold=tta_fold
         )
         try:
