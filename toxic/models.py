@@ -257,7 +257,7 @@ class ToxicClassifierBase:
     def load_dataset_dataframe(self, name):
         ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz",
                          compression='gzip')
-        return ds['text'].values[:512], ds['class'].values[:512]
+        return ds['text'].values, ds['class'].values
 
     def load_dataset(self, name, refresh=True):
         if not refresh:
