@@ -23,8 +23,10 @@ setup(
         'neptune-client==0.4.114',
         'tensorflow-datasets==3.1.0',
         'wild-nlp==1.0.2',
+        'nlpaug==0.0.14',
         'bottle==0.12.18',
-        'requests==2.23.0'
+        'requests==2.23.0',
+        'nltk==3.5'
     ],
     include_package_data=True,
 )

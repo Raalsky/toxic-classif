@@ -3,8 +3,14 @@ import transformers
 import numpy as np
 import itertools
 
-from wildnlp.aspects import SentimentMasking, RemoveChar, QWERTY, Digits2Words #Misspellings
-from wildnlp.aspects.utils import compose
+import nltk
+# nltk.download('wordnet')
+# nltk.download('averaged_perceptron_tagger')
+
+import nlpaug.augmenter.char as nac
+import nlpaug.augmenter.word as naw
+import nlpaug.augmenter.sentence as nas
+import nlpaug.flow as naf
 
 from .utils import hash_name, MODELS_DIR, PARAMS_DIR
 
@@ -199,10 +205,14 @@ class BertToxicClassifier(ToxicClassifierBase):
             load_weights=load_weights,
             tta_fold=tta_fold
         )
-        self.tta_composition = compose(SentimentMasking(), RemoveChar(), QWERTY())
+        self.tta_composition = naf.Sequential([
+            naw.SynonymAug(aug_src='wordnet'),
+            naw.RandomWordAug(),
+            nac.KeyboardAug()
+        ])
 
     def augment_one(self, sequence):
-        return self.tta_composition(sequence)
+        return self.tta_composition.augment(sequence)
 
     def classifier_architecture(self, input_layer):
         x = tf.keras.layers.Dense(256, activation="relu")(input_layer)
