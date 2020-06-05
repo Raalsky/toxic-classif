@@ -1,6 +1,9 @@
 import os
 import sys
 
+import optuna
+import neptune
+
 from toxic.utils import preapre_environment
 from toxic.models import ToxicClassifierBase, BertToxicClassifier
 
@@ -39,18 +42,35 @@ def client():
     )
 
 
-def train():
-    preapre_environment()
+def train(trial):
+    x = trial.suggest_uniform('x', -10, 10)
 
     cls = BertToxicClassifier()
-
     (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = cls.load_datasets(refresh=False)
 
-    cls.train(x_train, y_train, x_validation, y_validation)
-    loss, acc = cls.evaluate(x_test, y_test)
+    neptune.create_experiment(name=cls.model_name_hash, params=trial.params)
+    neptune.append_tag('bert')
 
-    print(100.0 * acc)
+    cls.train(x_train, y_train, x_validation, y_validation)
+    test_loss, test_acc = cls.evaluate(x_test, y_test)
+
+    neptune.send_metric('test_loss', test_loss)
+    neptune.send_metric('test_acc', 100.0 * test_acc)
+
+    return test_acc
 
 
 def optimization(n_trials=1):
-    pass
+    preapre_environment()
+    neptune.init('raalsky/toxic')
+    study = optuna.create_study(
+        study_name='toxicity',
+        storage='sqlite:///studies.db',
+        load_if_exists=True
+    )
+
+    study.optimize(train,
+                   n_trials=n_trials,
+                   timeout=3 * 60 * 60)
+
+    print(study.best_params)

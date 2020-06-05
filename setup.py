@@ -27,7 +27,8 @@ setup(
         'wild-nlp==1.0.2',
         'nlpaug==0.0.14',
         'requests==2.23.0',
-        'nltk==3.5'
+        'nltk==3.5',
+        'psutil==5.7.0'
     ],
     include_package_data=True,
 )
