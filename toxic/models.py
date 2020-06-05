@@ -186,9 +186,13 @@ class ToxicClassifierBase:
     def save(self):
         model_version = str(int(time.time()))
         path = MODELS_DIR / self.model_name_hash / model_version
+
         os.makedirs(path, exist_ok=True)
         print(f"Saving model into {path}")
+
         tf.saved_model.save(self.model, str(path))
+
+        return path
 
     def raw_predict(self, sequences):
 
@@ -250,33 +254,44 @@ class ToxicClassifierBase:
 
         return ids, masks, segments
 
+    def load_dataset_dataframe(self, name):
+        ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz",
+                         compression='gzip')
+        return ds['text'].values, ds['class'].values
+
     def load_dataset(self, name, refresh=True):
         if not refresh:
             tokens = self.prepare_tokens(name, refresh=False)
             y = np.load(DATASET_DIR / f"{name}_y.npy")
         else:
-            ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz", compression='gzip')
-            x, y = ds['text'].values, ds['class'].values
-            tokens = self.prepare_tokens(name, x=x[:10])
+            x, y = self.load_dataset_dataframe(name)
+            tokens = self.prepare_tokens(name, x)
             np.save(DATASET_DIR / f"{name}_y.npy", y)
 
-        return tokens, y[:10]
+        return tokens, y
 
     def load_datasets(self, refresh=True):
         return (self.load_dataset('train', refresh=refresh)), \
-               (self.load_dataset('validation', refresh=refresh)),\
-               (self.load_dataset('test', refresh=refresh))
+               (self.load_dataset('validation', refresh=refresh))
 
-    def train(self, x_train, y_train, x_validation, y_validation):
-        history = self.model.fit(
+    def train(self, x_train, y_train, x_validation, y_validation, epochs=1, batch_size=16):
+        return self.model.fit(
             x_train, y_train,
             validation_data=(x_validation, y_validation),
-            epochs=1,
-            batch_size=16
+            epochs=epochs,
+            batch_size=batch_size
         )
 
     def evaluate(self, x_test, y_test):
         return self.model.evaluate(x_test, y_test)
+
+    def evaluate_with_tta(self, sequences, y):
+        predictions = self.predict(sequences)
+        acc = tf.keras.metrics.Accuracy()
+        acc.update_state(
+            predictions, y
+        )
+        return acc.result()
 
 
 class BertToxicClassifier(ToxicClassifierBase):

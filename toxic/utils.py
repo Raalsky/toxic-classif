@@ -1,6 +1,8 @@
+import os
 import sys
 import hashlib
 import random
+import tarfile
 import tensorflow as tf
 import tensorflow.python.util.deprecation as deprecation
 from pathlib import Path
@@ -24,3 +26,17 @@ def preapre_environment():
         print('Using GPU')
     except:
         sys.stderr.write('Could not get GPU to run\n')
+
+
+def compress_directory(path):
+    tmp_file = "model.tar.gz"
+
+    if os.path.exists(tmp_file):
+        os.remove(tmp_file)
+    os.remove(tmp_file)
+
+    tar = tarfile.open(tmp_file, "w:gz")
+    tar.add(path, arcname="model")
+    tar.close()
+
+    return tmp_file

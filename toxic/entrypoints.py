@@ -4,7 +4,7 @@ import sys
 import optuna
 import neptune
 
-from toxic.utils import preapre_environment
+from toxic.utils import preapre_environment, compress_directory
 from toxic.models import ToxicClassifierBase, BertToxicClassifier
 
 
@@ -48,6 +48,8 @@ def train(trial):
     attention_dropout = trial.suggest_uniform('attention_dropout', 0.0, 0.5)
     trainable_embedding = trial.suggest_categorical('trainable_embedding', [False, True])
     learning_rate = trial.suggest_loguniform('learning_rate', 1e-7, 1e-4)
+    epochs = trial.suggest_int('epochs', 1, 5)
+    batch_size = trial.suggest_int('batch_size', 16, 128, 16)
 
     cls = BertToxicClassifier(
         max_seq_length=max_seq_length,
@@ -56,18 +58,28 @@ def train(trial):
         trainable_embedding=trainable_embedding,
         learning_rate=learning_rate
     )
-    (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = cls.load_datasets(refresh=False)
+    (x_train, y_train), (x_validation, y_validation) = cls.load_datasets(refresh=False)
 
     neptune.create_experiment(name=cls.model_name_hash, params=trial.params)
 
     for tag in cls.tags:
         neptune.append_tag(tag)
 
-    cls.train(x_train, y_train, x_validation, y_validation)
-    test_loss, test_acc = cls.evaluate(x_test, y_test)
+    # Training
+    cls.train(x_train, y_train,
+              x_validation, y_validation,
+              epochs=epochs,
+              batch_size=batch_size
+              )
 
-    neptune.send_metric('test_loss', test_loss)
+    # Evaluation
+    x_test, y_test = cls.load_dataset_dataframe('test')
+    test_acc = cls.evaluate_with_tta(x_test, y_test)
+
     neptune.send_metric('test_acc', 100.0 * test_acc)
+
+    model_path = cls.save()
+    neptune.send_artifact(compress_directory(model_path), 'model.tar.gz')
 
     return test_acc
 
