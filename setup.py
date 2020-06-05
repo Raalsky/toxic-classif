@@ -7,7 +7,8 @@ setup(
     entry_points={
         'console_scripts': [
             'toxic_server=toxic.__main__:server',
-            'toxic_client=toxic.__main__:client'
+            'toxic_client=toxic.__main__:client',
+            'toxic_train=toxic.__main__:train'
         ],
     },
     install_requires=[

@@ -7,6 +7,7 @@ import requests
 import nltk
 import time
 import json
+from tqdm import tqdm
 import os
 
 
@@ -141,7 +142,7 @@ class ToxicClassifierBase:
     def get_tokens(self, sequences):
         input_ids, input_masks, input_segments = [], [], []
 
-        for sentence in sequences:
+        for sentence in tqdm(sequences):
             inputs = self.tokenizer.encode_plus(sentence,
                                                 add_special_tokens=True,
                                                 max_length=self.max_seq_length,
@@ -231,16 +232,41 @@ class ToxicClassifierBase:
             self.score_after_tta(predictions)
         )
 
-    @classmethod
-    def load_dataset(cls):
-        train = pd.read_csv(DATASET_DIR / 'train_final.csv.gz', compression='gzip')
-        validation = pd.read_csv(DATASET_DIR / 'validation_final.csv.gz', compression='gzip')
-        test = pd.read_csv(DATASET_DIR / 'test_final.csv.gz', compression='gzip')
+    def prepare_tokens(self, name, refresh=True, x=None):
+        if not refresh:
+            ids = np.load(DATASET_DIR / f"{name}_ids.npy")
+            masks = np.load(DATASET_DIR / f"{name}_masks.npy")
+            segments = np.load(DATASET_DIR / f"{name}_segments.npy")
+        else:
+            ids, masks, segments = self.get_tokens(x)
 
-        return train, validation, test
+            np.save(DATASET_DIR / f"{name}_ids.npy", ids)
+            np.save(DATASET_DIR / f"{name}_masks.npy", masks)
+            np.save(DATASET_DIR / f"{name}_segments.npy", segments)
 
-    def train(self, train, validation):
-        pass
+        return ids, masks, segments
+
+    def load_dataset(self, name, refresh=True):
+        if not refresh:
+            tokens = self.prepare_tokens(name, refresh=False)
+            y = np.load(DATASET_DIR / f"{name}_y.npy")
+        else:
+            ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz",
+                             compression='gzip')
+            x, y = ds['text'].values, ds['class'].values
+            tokens = self.prepare_tokens(name, x=x)
+            np.save(DATASET_DIR / f"{name}_y.npy", y)
+
+        return tokens, y
+
+    def load_datasets(self, refresh=True):
+        return (self.load_dataset('train', refresh=refresh)), \
+               (self.load_dataset('validation', refresh=refresh)),\
+               (self.load_dataset('test', refresh=refresh))
+
+    def train(self, x_train, y_train, x_validation, y_validation):
+        print(x_train.shape, y_train.shape)
+        print(x_validation.shape, y_validation.shape)
 
     def evaluate(self, test):
         pass
@@ -272,8 +298,8 @@ class BertToxicClassifier(ToxicClassifierBase):
             nltk.download('wordnet')
             nltk.download('averaged_perceptron_tagger')
 
-    def augment_one(self, sequence):
-        return self.tta_composition.augment(sequence)
+    # def augment_one(self, sequence):
+    #     return self.tta_composition.augment(sequence)
 
     def classifier_architecture(self, input_layer):
         x = tf.keras.layers.Dense(256, activation="relu")(input_layer)

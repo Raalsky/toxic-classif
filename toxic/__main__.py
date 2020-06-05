@@ -1,8 +1,8 @@
 import os
 import sys
 
-from toxic.models import ToxicClassifierBase,\
-    BertToxicClassifier as ToxicClassifier
+from toxic.utils import preapre_environment
+from toxic.models import ToxicClassifierBase, BertToxicClassifier
 
 
 def server():
@@ -20,7 +20,7 @@ def client():
     host = sys.argv[1] + '/v1/models/deploy'
     batch_size = int(sys.argv[2])
 
-    dummy_classifier = ToxicClassifier(initialize_model=False)
+    dummy_classifier = BertToxicClassifier(initialize_model=False)
 
     batch = []
 
@@ -40,8 +40,15 @@ def client():
 
 
 def train():
-    cls = ToxicClassifier()
+    preapre_environment()
 
-    train, validation, test = ToxicClassifierBase.load_dataset()
+    cls = BertToxicClassifier()
 
-    cls.train(train, validation)
+    (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = cls.load_datasets()
+
+
+    # train_tokens = cls.get_tokens(x_train)
+    # validation_tokens = cls.get_tokens(x_validation)
+    # test_tokens = cls.get_tokens(x_test)
+
+    # cls.train(train_tokens, y_train, validation_tokens, y_validation)
