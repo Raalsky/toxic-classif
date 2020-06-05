@@ -50,3 +50,7 @@ def train():
     loss, acc = cls.evaluate(x_test, y_test)
 
     print(100.0 * acc)
+
+
+def optimization(n_trials=1):
+    pass

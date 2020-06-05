@@ -7,7 +7,7 @@ python setup.py install
 
 ## Serving
 ### Client
-`cat <sample-per-line>.csv | toxic_client http://<id>.ngrok.io <batch-size>`
+`cat <sample-per-line>.csv | toxic-client http://<id>.ngrok.io <batch-size>`
 ### Server
-`toxic_server <port> <model-name>`
+`toxic-server <port> <model-name>`
 For `model-name` specity `deploy`

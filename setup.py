@@ -6,9 +6,10 @@ setup(
     packages=['toxic'],
     entry_points={
         'console_scripts': [
-            'toxic_server=toxic.__main__:server',
-            'toxic_client=toxic.__main__:client',
-            'toxic_train=toxic.__main__:train'
+            'toxic-server=toxic.entrypoints:server',
+            'toxic-client=toxic.entrypoints:client',
+            'toxic-train=toxic.entrypoints:train',
+            'toxic-optim=toxic.entrypoints:optimization'
         ],
     },
     install_requires=[
