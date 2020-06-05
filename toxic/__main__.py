@@ -1,11 +1,11 @@
-import subprocess
+import os
 import sys
 import json
 import requests
 
 
-def server(port=6666):
-    subprocess.call([f"docker run -it --rm -p {port}:8501 -v \"$PWD:/models\" -e MODEL_NAME=deploy tensorflow/serving"])
+def server(port=6666, model_name='deploy'):
+    os.system(f"docker run -it --rm -p {port}:8501 -v \"$PWD/models/{model_name}:/models/{model_name}\" -e MODEL_NAME={model_name} tensorflow/serving")
 
 
 def fetch_scores_and_print(host, sequences):

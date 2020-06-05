@@ -3,6 +3,7 @@ import transformers
 import numpy as np
 import itertools
 import nltk
+import time
 import os
 
 
@@ -22,6 +23,7 @@ class ToxicClassifierBase:
                  pretrained_weights_name,
                  load_weights=False,
                  load_params=False,
+                 initialize_model=True,
                  max_seq_length=32,
                  dropout=0.2,
                  attention_dropout=0.2,
@@ -52,7 +54,7 @@ class ToxicClassifierBase:
         self.metrics = ["accuracy"]
 
         self.load_params_from_file_if_specified(load_params)
-        self.initialize_model()
+        self.initialize_model_if_specified(initialize_model)
         self.load_weights_from_file_if_specified(load_weights)
 
     def load_params_from_file_if_specified(self, load_params):
@@ -66,11 +68,12 @@ class ToxicClassifierBase:
                 MODELS_DIR / self.model_name_hash / 'weights.h5'
             ))
 
-    def initialize_model(self):
-        self.model = self.architecture()
-        self.model.compile(optimizer=self.optimizer,
-                           loss=self.loss,
-                           metrics=self.metrics)
+    def initialize_model_if_specified(self, initialize_model):
+        if initialize_model:
+            self.model = self.architecture()
+            self.model.compile(optimizer=self.optimizer,
+                               loss=self.loss,
+                               metrics=self.metrics)
 
     @property
     def tokenizer(self):
@@ -173,9 +176,11 @@ class ToxicClassifierBase:
         return np.bincount(ids, predictions) / np.bincount(ids)
 
     def save(self):
-        path = MODELS_DIR / self.model_name_hash
+        model_version = str(int(time.time()))
+        path = MODELS_DIR / self.model_name_hash / model_version
         os.makedirs(path, exist_ok=True)
-        tf.saved_model.save(self.model, str(path / 'model'))
+        print(f"Saving model into {path}")
+        tf.saved_model.save(self.model, str(path))
 
     def raw_predict(self, sequences):
 
