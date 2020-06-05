@@ -230,6 +230,9 @@ class ToxicClassifierBase:
             self.score_after_tta(predictions)
         )
 
+    def load_dataset(self):
+
+
 
 class BertToxicClassifier(ToxicClassifierBase):
     def __init__(self,

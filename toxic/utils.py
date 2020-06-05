@@ -12,6 +12,7 @@ def hash_name(name):
 
 MODELS_DIR = Path('models')
 PARAMS_DIR = Path('params')
+DATASET_DIR = Path('dataset')
 
 
 def preapre_environment():
