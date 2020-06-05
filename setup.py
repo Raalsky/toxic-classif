@@ -5,7 +5,10 @@ setup(
     version='0.0.1',
     packages=['toxic'],
     entry_points={
-        'console_scripts': ['toxic=toxic:main'],
+        'console_scripts': [
+            'toxic_server=toxic.__main__:server',
+            'toxic_client=toxic.__main__:client'
+        ],
     },
     install_requires=[
         'pip>=20.1.1',
@@ -20,7 +23,8 @@ setup(
         'neptune-client==0.4.114',
         'tensorflow-datasets==3.1.0',
         'wild-nlp==1.0.2',
-        'bottle==0.12.18'
+        'bottle==0.12.18',
+        'requests==2.23.0'
     ],
     include_package_data=True,
 )

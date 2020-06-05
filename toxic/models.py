@@ -165,7 +165,6 @@ class ToxicClassifierBase:
     def score_after_tta(self, predictions):
         # Numpy magic aka averaging every "tta_fold" subarrays
         predictions = predictions[:, 0]
-        print(predictions)
         ids = np.arange(len(predictions)) // (1 + self.tta_fold)
         return np.bincount(ids, predictions) / np.bincount(ids)
 
