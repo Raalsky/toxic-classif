@@ -2,14 +2,12 @@ import tensorflow as tf
 import transformers
 import numpy as np
 import itertools
-
 import nltk
-# nltk.download('wordnet')
-# nltk.download('averaged_perceptron_tagger')
+import os
+
 
 import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw
-import nlpaug.augmenter.sentence as nas
 import nlpaug.flow as naf
 
 from .utils import hash_name, MODELS_DIR, PARAMS_DIR
@@ -174,6 +172,11 @@ class ToxicClassifierBase:
         ids = np.arange(len(predictions)) // (1 + self.tta_fold)
         return np.bincount(ids, predictions) / np.bincount(ids)
 
+    def save(self):
+        path = MODELS_DIR / self.model_name_hash
+        os.makedirs(path, exist_ok=True)
+        tf.saved_model.save(self.model, str(path / 'model'))
+
     def raw_predict(self, sequences):
 
         return self.score_after_tta(
@@ -205,11 +208,15 @@ class BertToxicClassifier(ToxicClassifierBase):
             load_weights=load_weights,
             tta_fold=tta_fold
         )
-        self.tta_composition = naf.Sequential([
-            naw.SynonymAug(aug_src='wordnet'),
-            naw.RandomWordAug(),
-            nac.KeyboardAug()
-        ])
+        try:
+            self.tta_composition = naf.Sequential([
+                naw.SynonymAug(aug_src='wordnet'),
+                naw.RandomWordAug(),
+                nac.KeyboardAug()
+            ])
+        except:
+            nltk.download('wordnet')
+            nltk.download('averaged_perceptron_tagger')
 
     def augment_one(self, sequence):
         return self.tta_composition.augment(sequence)

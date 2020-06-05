@@ -7,3 +7,5 @@ text = "It’s mayors and county executives that appoint most police chiefs and 
 print(text)
 
 print(cls.predict([text]))
+
+cls.save()
