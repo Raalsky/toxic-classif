@@ -43,6 +43,7 @@ class ToxicClassifierBase:
         self.config_cls = config_cls
         self.embedding_cls = embedding_model_cls
         self.model = None
+        self.tokenizer = None
 
         self.max_seq_length = max_seq_length
         self.do_lower_case = do_lower_case
@@ -57,6 +58,7 @@ class ToxicClassifierBase:
         self.loss = "binary_crossentropy"
         self.metrics = ["accuracy"]
 
+        self.initialize_tokenizer()
         self.load_params_from_file_if_specified(load_params)
         self.initialize_model_if_specified(initialize_model)
         self.load_weights_from_file_if_specified(load_weights)
@@ -79,9 +81,8 @@ class ToxicClassifierBase:
                                loss=self.loss,
                                metrics=self.metrics)
 
-    @property
-    def tokenizer(self):
-        return self.tokenizer_cls.from_pretrained(
+    def initialize_tokenizer(self):
+        self.tokenizer = self.tokenizer_cls.from_pretrained(
             self.pretrained_weights_name,
             do_lower_case=self.do_lower_case,
             add_special_tokens=True,
@@ -251,13 +252,12 @@ class ToxicClassifierBase:
             tokens = self.prepare_tokens(name, refresh=False)
             y = np.load(DATASET_DIR / f"{name}_y.npy")
         else:
-            ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz",
-                             compression='gzip')
+            ds = pd.read_csv(DATASET_DIR / f"{name}_final.csv.gz", compression='gzip')
             x, y = ds['text'].values, ds['class'].values
-            tokens = self.prepare_tokens(name, x=x)
+            tokens = self.prepare_tokens(name, x=x[:10])
             np.save(DATASET_DIR / f"{name}_y.npy", y)
 
-        return tokens, y
+        return tokens, y[:10]
 
     def load_datasets(self, refresh=True):
         return (self.load_dataset('train', refresh=refresh)), \
@@ -265,8 +265,12 @@ class ToxicClassifierBase:
                (self.load_dataset('test', refresh=refresh))
 
     def train(self, x_train, y_train, x_validation, y_validation):
-        print(x_train.shape, y_train.shape)
-        print(x_validation.shape, y_validation.shape)
+        history = self.model.fit(
+            x_train, y_train,
+            validation_data=(x_validation, y_validation),
+            epochs=1,
+            batch_size=16
+        )
 
     def evaluate(self, test):
         pass
