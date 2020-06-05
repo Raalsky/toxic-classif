@@ -287,13 +287,13 @@ class ToxicClassifierBase:
 
     def evaluate_with_tta(self, sequences, y):
         predictions = [
-            pred['score'] for pred in self.predict(sequences)
+            int(pred['toxic']) for pred in self.predict(sequences)
         ]
         acc = tf.keras.metrics.Accuracy()
         acc.update_state(
             predictions, y
         )
-        return acc.result()
+        return float(acc.result())
 
 
 class BertToxicClassifier(ToxicClassifierBase):

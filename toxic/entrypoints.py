@@ -77,12 +77,10 @@ def train(trial):
     x_test, y_test = cls.load_dataset_dataframe('test')
     test_acc = cls.evaluate_with_tta(x_test, y_test)
 
-    print(test_acc)
-
     neptune.send_metric('test_acc', 100.0 * test_acc)
 
-    model_path = cls.save()
-    neptune.send_text('path', model_path)
+    # model_path = cls.save()
+    # neptune.send_text('path', str(model_path))
 
     # neptune.send_artifact(compress_directory(model_path), 'model.tar.gz')
 
