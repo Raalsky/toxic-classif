@@ -1,4 +1,5 @@
 import tensorflow as tf
+import pandas as pd
 import transformers
 import numpy as np
 import itertools
@@ -13,7 +14,7 @@ import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw
 import nlpaug.flow as naf
 
-from .utils import hash_name, MODELS_DIR, PARAMS_DIR
+from .utils import hash_name, MODELS_DIR, PARAMS_DIR, DATASET_DIR
 
 
 class ToxicClassifierBase:
@@ -230,8 +231,19 @@ class ToxicClassifierBase:
             self.score_after_tta(predictions)
         )
 
-    def load_dataset(self):
+    @classmethod
+    def load_dataset(cls):
+        train = pd.read_csv(DATASET_DIR / 'train_final.csv.gz', compression='gzip')
+        validation = pd.read_csv(DATASET_DIR / 'validation_final.csv.gz', compression='gzip')
+        test = pd.read_csv(DATASET_DIR / 'test_final.csv.gz', compression='gzip')
 
+        return train, validation, test
+
+    def train(self, train, validation):
+        pass
+
+    def evaluate(self, test):
+        pass
 
 
 class BertToxicClassifier(ToxicClassifierBase):

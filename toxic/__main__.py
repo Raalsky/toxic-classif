@@ -1,9 +1,8 @@
 import os
 import sys
 
-from toxic.models import BertToxicClassifier as ToxicClassifier
-
-dummy_classifier = ToxicClassifier(initialize_model=False)
+from toxic.models import ToxicClassifierBase,\
+    BertToxicClassifier as ToxicClassifier
 
 
 def server():
@@ -21,6 +20,8 @@ def client():
     host = sys.argv[1] + '/v1/models/deploy'
     batch_size = int(sys.argv[2])
 
+    dummy_classifier = ToxicClassifier(initialize_model=False)
+
     batch = []
 
     for line in sys.stdin:
@@ -36,3 +37,11 @@ def client():
     print_results(
         dummy_classifier.predict_from_api(host, batch)
     )
+
+
+def train():
+    cls = ToxicClassifier()
+
+    train, validation, test = ToxicClassifierBase.load_dataset()
+
+    cls.train(train, validation)
