@@ -11,3 +11,5 @@ python setup.py install
 ### Server
 `toxic-server <port> <model-name>`
 For `model-name` specity `deploy`
+
+`toxic-optim <n-trials>` for optuna optimization

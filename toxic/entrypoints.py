@@ -60,7 +60,8 @@ def train(trial):
     return test_acc
 
 
-def optimization(n_trials=1):
+def optimization():
+    n_trials = int(sys.argv[1])
     preapre_environment()
     neptune.init('raalsky/toxic')
     study = optuna.create_study(
