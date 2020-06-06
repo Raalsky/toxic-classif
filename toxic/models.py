@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tqdm import tqdm
 import pandas as pd
 import transformers
 import numpy as np
@@ -7,7 +8,6 @@ import requests
 import nltk
 import time
 import json
-from tqdm import tqdm
 import os
 
 
@@ -20,7 +20,6 @@ from .utils import hash_name, MODELS_DIR, PARAMS_DIR, DATASET_DIR
 
 class ToxicClassifierBase:
     def __init__(self,
-                 model_name,
                  tokenizer_cls,
                  config_cls,
                  embedding_model_cls,
@@ -38,8 +37,7 @@ class ToxicClassifierBase:
                  tta_fold=0,
                  tags=[]
                  ):
-        self.model_name = model_name
-        self.model_name_hash = hash_name(model_name)
+        self.model_name = hash_name(f"{time.time()}")
         self.pretrained_weights_name = pretrained_weights_name
         self.tokenizer_cls = tokenizer_cls
         self.config_cls = config_cls
@@ -74,7 +72,7 @@ class ToxicClassifierBase:
     def load_weights_from_file_if_specified(self, load_weights):
         if load_weights:
             self.model.load_weights(str(
-                MODELS_DIR / self.model_name_hash / 'weights.h5'
+                MODELS_DIR / self.model_name / 'weights.h5'
             ))
 
     def initialize_model_if_specified(self, initialize_model):
@@ -185,14 +183,14 @@ class ToxicClassifierBase:
 
     def save(self):
         model_version = str(int(time.time()))
-        path = MODELS_DIR / self.model_name_hash / model_version
+        model_path = str(MODELS_DIR / self.model_name / model_version)
 
-        os.makedirs(path, exist_ok=True)
-        print(f"Saving model into {path}")
+        os.makedirs(model_path, exist_ok=True)
+        print(f"Saving model into {model_path}")
 
-        tf.saved_model.save(self.model, str(path))
+        tf.saved_model.save(self.model, model_path)
 
-        return path
+        return model_path
 
     def raw_predict(self, sequences):
 
@@ -306,14 +304,14 @@ class BertToxicClassifier(ToxicClassifierBase):
                  attention_dropout=0.2,
                  threshold=0.5,
                  learning_rate=2e-6,
-                 trainable_embedding=False
+                 trainable_embedding=False,
+                 pretrained_weights_name='bert-base-uncased'
                  ):
         super(BertToxicClassifier, self).__init__(
-            model_name='TOX-1',
             tokenizer_cls=transformers.BertTokenizer,
             config_cls=transformers.BertConfig,
             embedding_model_cls=transformers.TFBertModel,
-            pretrained_weights_name='bert-base-uncased',
+            pretrained_weights_name=pretrained_weights_name,
             load_weights=load_weights,
             initialize_model=initialize_model,
             tta_fold=tta_fold,
@@ -324,6 +322,56 @@ class BertToxicClassifier(ToxicClassifierBase):
             trainable_embedding=trainable_embedding,
             learning_rate=learning_rate,
             tags=['bert']
+        )
+        self.optimizer = tf.keras.optimizers.Nadam(learning_rate=self.learning_rate)
+        try:
+            self.tta_composition = naf.Sequential([
+                naw.SynonymAug(aug_src='wordnet'),
+                naw.RandomWordAug(),
+                nac.KeyboardAug()
+            ])
+        except:
+            nltk.download('wordnet')
+            nltk.download('averaged_perceptron_tagger')
+
+    def augment_one(self, sequence):
+        return self.tta_composition.augment(sequence)
+
+    def classifier_architecture(self, input_layer):
+        x = tf.keras.layers.Dense(256, activation="relu")(input_layer)
+        x = tf.keras.layers.Dense(1, activation="sigmoid")(x)
+
+        return x
+
+
+class RoBERTaToxicClassifier(ToxicClassifierBase):
+    def __init__(self,
+                 load_weights: bool = False,
+                 tta_fold: int = 0,
+                 initialize_model: bool = True,
+                 max_seq_length=32,
+                 dropout=0.2,
+                 attention_dropout=0.2,
+                 threshold=0.5,
+                 learning_rate=2e-6,
+                 trainable_embedding=False,
+                 pretrained_weights_name='roberta-base',
+                 ):
+        super(RoBERTaToxicClassifier, self).__init__(
+            tokenizer_cls=transformers.RobertaTokenizer,
+            config_cls=transformers.RobertaConfig,
+            embedding_model_cls=transformers.TFRobertaModel,
+            pretrained_weights_name=pretrained_weights_name,
+            load_weights=load_weights,
+            initialize_model=initialize_model,
+            tta_fold=tta_fold,
+            max_seq_length=max_seq_length,
+            dropout=dropout,
+            attention_dropout=attention_dropout,
+            threshold=threshold,
+            trainable_embedding=trainable_embedding,
+            learning_rate=learning_rate,
+            tags=['roberta']
         )
         self.optimizer = tf.keras.optimizers.Nadam(learning_rate=self.learning_rate)
         try:

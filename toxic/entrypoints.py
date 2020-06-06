@@ -5,7 +5,7 @@ import optuna
 import neptune
 
 from toxic.utils import preapre_environment, compress_directory
-from toxic.models import ToxicClassifierBase, BertToxicClassifier
+from toxic.models import ToxicClassifierBase, BertToxicClassifier, RoBERTaToxicClassifier
 
 
 def server():
@@ -50,6 +50,9 @@ def train(trial):
     learning_rate = trial.suggest_loguniform('learning_rate', 1e-7, 1e-4)
     epochs = trial.suggest_int('epochs', 1, 5)
     batch_size = trial.suggest_int('batch_size', 16, 128, 16)
+    pretrained_weights_name = trial.suggest_categorical('pretrained_weights_name', [
+        'bert-base-uncased'
+    ])
 
     cls = BertToxicClassifier(
         max_seq_length=max_seq_length,
@@ -57,11 +60,12 @@ def train(trial):
         attention_dropout=attention_dropout,
         trainable_embedding=trainable_embedding,
         learning_rate=learning_rate,
+        pretrained_weights_name=pretrained_weights_name,
         tta_fold=8
     )
-    (x_train, y_train), (x_validation, y_validation) = cls.load_datasets()
+    (x_train, y_train), (x_validation, y_validation) = cls.load_datasets(refresh=True)
 
-    neptune.create_experiment(name=cls.model_name_hash, params=trial.params)
+    neptune.create_experiment(name=cls.model_name, params=trial.params)
 
     for tag in cls.tags:
         neptune.append_tag(tag)
@@ -78,9 +82,7 @@ def train(trial):
     test_acc = cls.evaluate_with_tta(x_test, y_test)
 
     neptune.send_metric('test_acc', 100.0 * test_acc)
-
-    # model_path = cls.save()
-    # neptune.send_text('path', str(model_path))
+    neptune.send_text('path', cls.save())
 
     # neptune.send_artifact(compress_directory(model_path), 'model.tar.gz')
 
