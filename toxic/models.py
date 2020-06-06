@@ -338,57 +338,9 @@ class BertToxicClassifier(ToxicClassifierBase):
         return self.tta_composition.augment(sequence)
 
     def classifier_architecture(self, input_layer):
-        x = tf.keras.layers.Dense(256, activation="relu")(input_layer)
-        x = tf.keras.layers.Dense(1, activation="sigmoid")(x)
-
-        return x
-
-
-class RoBERTaToxicClassifier(ToxicClassifierBase):
-    def __init__(self,
-                 load_weights: bool = False,
-                 tta_fold: int = 0,
-                 initialize_model: bool = True,
-                 max_seq_length=32,
-                 dropout=0.2,
-                 attention_dropout=0.2,
-                 threshold=0.5,
-                 learning_rate=2e-6,
-                 trainable_embedding=False,
-                 pretrained_weights_name='roberta-base',
-                 ):
-        super(RoBERTaToxicClassifier, self).__init__(
-            tokenizer_cls=transformers.RobertaTokenizer,
-            config_cls=transformers.RobertaConfig,
-            embedding_model_cls=transformers.TFRobertaModel,
-            pretrained_weights_name=pretrained_weights_name,
-            load_weights=load_weights,
-            initialize_model=initialize_model,
-            tta_fold=tta_fold,
-            max_seq_length=max_seq_length,
-            dropout=dropout,
-            attention_dropout=attention_dropout,
-            threshold=threshold,
-            trainable_embedding=trainable_embedding,
-            learning_rate=learning_rate,
-            tags=['roberta']
-        )
-        self.optimizer = tf.keras.optimizers.Nadam(learning_rate=self.learning_rate)
-        try:
-            self.tta_composition = naf.Sequential([
-                naw.SynonymAug(aug_src='wordnet'),
-                naw.RandomWordAug(),
-                nac.KeyboardAug()
-            ])
-        except:
-            nltk.download('wordnet')
-            nltk.download('averaged_perceptron_tagger')
-
-    def augment_one(self, sequence):
-        return self.tta_composition.augment(sequence)
-
-    def classifier_architecture(self, input_layer):
-        x = tf.keras.layers.Dense(256, activation="relu")(input_layer)
+        x = tf.keras.layers.BatchNormalization()(input_layer)
+        x = tf.keras.layers.Dense(256, activation="relu")(x)
+        x = tf.keras.layers.Dropout(self.dropout)(x)
         x = tf.keras.layers.Dense(1, activation="sigmoid")(x)
 
         return x

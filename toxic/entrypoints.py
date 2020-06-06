@@ -5,7 +5,7 @@ import optuna
 import neptune
 
 from toxic.utils import preapre_environment, compress_directory
-from toxic.models import ToxicClassifierBase, BertToxicClassifier, RoBERTaToxicClassifier
+from toxic.models import ToxicClassifierBase, BertToxicClassifier
 
 
 def server():
@@ -44,12 +44,12 @@ def client():
 
 def train(trial):
     max_seq_length = trial.suggest_categorical('max_seq_length', [32, 64, 128, 256, 512])
-    dropout = trial.suggest_uniform('dropout', 0.0, 0.5)
-    attention_dropout = trial.suggest_uniform('attention_dropout', 0.0, 0.5)
+    dropout = trial.suggest_uniform('dropout', 0.0, 0.3)
+    attention_dropout = trial.suggest_uniform('attention_dropout', 0.0, 0.2)
     trainable_embedding = trial.suggest_categorical('trainable_embedding', [False, True])
-    learning_rate = trial.suggest_loguniform('learning_rate', 1e-7, 1e-4)
-    epochs = trial.suggest_int('epochs', 1, 5)
-    batch_size = trial.suggest_int('batch_size', 16, 128, 16)
+    learning_rate = trial.suggest_loguniform('learning_rate', 5e-7, 1e-4)
+    epochs = trial.suggest_int('epochs', 1, 3)
+    batch_size = trial.suggest_int('batch_size', 16, 64, 8)
     pretrained_weights_name = trial.suggest_categorical('pretrained_weights_name', [
         'bert-base-uncased'
     ])
